@@ -1,0 +1,69 @@
+data:
+  data_dir: 'D:\z_ML\mlops\mlops_zoom_customer_project\data'
+  eda_dir: 'eda_output'
+  cat_eda_file : 'cat_eda.png'
+  num_eda_file : 'num_eda.png'
+  corr_eda_file : 'corr_eda.png'
+  raw_filename : 'Customer-Churn-Records.csv'
+  training_data_filename : 'training_data.csv'
+  validation_data_filename : 'validation_data.csv'
+  testing_data_filename : 'testing_data.csv'
+  cols_to_drop:
+    - 'RowNumber'
+    - 'CustomerId'
+    - 'Surname'
+  cat_columns:
+    - 'Gender'
+    - 'Geography'
+    - 'Card Type'
+    - 'Tenure'
+    - 'NumOfProducts'
+    - 'Satisfaction Score'
+  numerical_columns:
+    - 'CreditScore'
+    - 'Age'
+    - 'Balance'
+    - 'EstimatedSalary'
+    - 'Point Earned'
+  cat_columns_to_encode:
+    - 'Gender'
+    - 'Geography'
+    - 'Card Type'
+    - 'Tenure'
+    - 'NumOfProducts'
+    - 'Satisfaction Score'
+  target_column:
+    - 'Exited'
+
+models:
+  model_artifact_dir: 'D:\z_ML\mlops\mlops_zoom_customer_project\model_artifacts'
+  baseline_model:
+    cm_filename: 'lr_confusionmatrix.png'
+  random_forest:
+    model_parameters:
+      param_grid:
+        n_estimators: [100, 200, 300, 500]
+        max_depth: [5, 7, 10]
+        min_samples_split: [2, 5, 10]
+      class_weight: 'balanced'
+    model_filename: 'best_rf_model.joblib'
+    params_filename: 'best_rf_params.joblib'
+    cm_filename: 'rf_confusionmatrix.png'
+  gradient_boosting:
+    model_parameters:
+      param_grid:
+        n_estimators: [50, 100, 150]
+        learning_rate: [0.1, 0.01]
+        max_depth: [3, 5, 7]
+    model_filename: 'best_gb_model.joblib'
+    params_filename: 'best_gb_params.joblib'
+    cm_filename: 'gb_confusionmatrix.png'
+
+mlflow:
+  tracking_uri: 'sqlite:///mlflow.db'
+  experiment_name: 'ETH_USD'
+
+logging:
+  level: INFO
+  file_name: 'my_app.log'
+  format: '%(asctime)s - %(levelname)s - %(filename)s - Line %(lineno)d - %(message)s'

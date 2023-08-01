@@ -1,0 +1,22 @@
+1)Create new conda environment
+conda create --name <env_name> 
+conda activate <env_name> 
+
+2) Techstack planned for the project
+Configuration management - hydra    
+pip install hydra-core
+
+Experiment Tracking/Model Registry - mlflow 	
+Workflow orchestration - Airflow
+
+pip install apache-airflow
+airflow db init
+airflow webserver
+airflow scheduler
+By default, the Airflow web server runs on localhost:8080
+DAG folder is located at <airflow_home>/dags
+Trigger DAG"
+
+
+Deployment - Docker
+Testing - pytest
