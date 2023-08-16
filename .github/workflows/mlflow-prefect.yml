@@ -1,0 +1,36 @@
+name: MLOps Workflow
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  mlops:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+        
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Start MLflow server
+      run: |
+        mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlflow-artifacts --host 0.0.0.0 &
+
+    - name: Start Prefect server
+      run: |
+        prefect server start
+
+    - name: Run model training
+      run: python src/test.py  # Modify this based on your project structure

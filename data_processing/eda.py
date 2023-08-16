@@ -1,11 +1,16 @@
 # data_processing/eda.py
 import pandas as pd
-import logging,os,sys
+import logging,os,sys,mlflow,matplotlib
+# Set the Matplotlib backend to a non-interactive one suitable for scripts
+matplotlib.use("Agg")
 from config.config_handler import load_config
+from config.logger import LoggerSingleton
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 cfg = load_config()
+logger = LoggerSingleton().get_logger()  # Create the logger instance
+logging.getLogger().propagate = False
 
 data_dir = cfg.data.data_dir
 eda_dir = cfg.data.eda_dir
@@ -37,15 +42,20 @@ def eda_cat_variable(df,fileName):
         plt.ylabel('Count')  # Use the default fontsize (scaled by sns.set())
 
     plt.tight_layout()
-    
-    plt.savefig(os.path.join(eda_output_path, fileName))
+    plot_file_path = os.path.join(eda_output_path, fileName)
+    plt.savefig(plot_file_path)
+
+    with mlflow.start_run(run_name="EDA_Categorical_Variables"):
+        mlflow.log_param("variable_type", "Categorical")
+        mlflow.log_param("num_columns", len(cat_columns))
+        mlflow.log_artifact(plot_file_path, "cat_eda_plots")  # Log the plot as an artifact
     #plt.show()
+    plt.close()
     
     
     
 def eda_num_variable(df,fileName):
     # Create a figure outside the loop
-    
     numerical_columns = cfg.data.numerical_columns
     
     plt.figure(figsize=(25, 35))
@@ -73,8 +83,18 @@ def eda_num_variable(df,fileName):
         plt.legend()  # Add a legend to distinguish the two categories
 
     plt.tight_layout()
-    plt.savefig(os.path.join(eda_output_path, fileName))
+    plot_file_path = os.path.join(eda_output_path, fileName)
+    plt.savefig(plot_file_path)
+
+    # Log the plot as an artifact in MLflow
+    with mlflow.start_run(run_name="EDA_Numerical_Variables"):
+        mlflow.log_param("variable_type", "Numerical")
+        mlflow.log_param("num_columns", len(numerical_columns))
+        mlflow.log_artifact(plot_file_path, "num_eda_plots")  # Log the plot as an artifact
+
+
     #plt.show()
+    plt.close()
 
 
 def plot_corr_matrix(df,fileName):
@@ -89,12 +109,20 @@ def plot_corr_matrix(df,fileName):
     plt.yticks(fontsize=10)  # Increase the font size of y-axis labels
     plt.xticks(fontsize=10)  # Increase the font size of x-axis labels
 
-    plt.savefig(os.path.join(eda_output_path, fileName))
+    plot_file_path = os.path.join(eda_output_path, fileName)
+    plt.savefig(plot_file_path)
+
+    # Log the plot as an artifact in MLflow
+    with mlflow.start_run(run_name="EDA_Correlation_Matrix"):
+        mlflow.log_param("matrix_type", "Correlation")
+        mlflow.log_artifact(plot_file_path, "corr_eda_plots")  # Log the plot as an artifact
+
     #plt.show()
+    plt.close()
     
  
 def perform_eda(df,cat_fileName,num_fileName,corr_fileName):
-    logging.info("Perform eda")
+    logger.info("Perform eda")
     eda_cat_variable(df,cat_fileName)
     eda_num_variable(df,num_fileName)
     plot_corr_matrix(df,corr_fileName)

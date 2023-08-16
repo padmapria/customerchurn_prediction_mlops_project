@@ -1,0 +1,48 @@
+name: MLOps Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mlops:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set Terraform flag
+      run: echo "USE_TERRAFORM=true" >> $GITHUB_ENV
+
+    - name: Run Terraform (optional)
+      run: |
+        if [ "${{ env.USE_TERRAFORM }}" == "true" ]; then
+          cd ./terraform
+          terraform init
+          terraform apply -auto-approve
+        fi
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Start MLflow server
+      run: |
+        mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlflow-artifacts --host 0.0.0.0 &
+
+    - name: Start Prefect server
+      run: |
+        prefect server start
+
+    - name: Run model training
+      run: python test.py  # Modify this based on your project structure

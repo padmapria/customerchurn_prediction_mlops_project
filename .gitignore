@@ -2,6 +2,7 @@
 .ipynb_checkpoints
 .idea
 .bin
+.prefectignore
 *.db
 
 *.parquet

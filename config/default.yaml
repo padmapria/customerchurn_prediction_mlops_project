@@ -1,10 +1,18 @@
+logging:
+  level: INFO
+  file_name: 'app.log'
+  format: '%(asctime)s - %(levelname)s - %(filename)s - Line %(lineno)d - %(message)s'
 data:
-  data_dir: 'D:\z_ML\mlops\mlops_zoom_customer_project\data'
+  data_dir: '../customerchurn_prediction_mlops_project/data'
+  raw_filename : 'Customer-Churn-Records.csv'
+  train_test_filename: 'train_cv_test_data.csv'
+  unit_integration_filename : 'unit_integration_test_data.csv'
+  batch_test_filename: 'batch_test_data.csv'
+  encoder_dir: 'encoder'
   eda_dir: 'eda_output'
   cat_eda_file : 'cat_eda.png'
   num_eda_file : 'num_eda.png'
   corr_eda_file : 'corr_eda.png'
-  raw_filename : 'Customer-Churn-Records.csv'
   training_data_filename : 'training_data.csv'
   validation_data_filename : 'validation_data.csv'
   testing_data_filename : 'testing_data.csv'
@@ -34,20 +42,21 @@ data:
     - 'Satisfaction Score'
   target_column:
     - 'Exited'
-
 models:
-  model_artifact_dir: 'D:\z_ML\mlops\mlops_zoom_customer_project\model_artifacts'
+  model_artifact_dir: '../customerchurn_prediction_mlops_project/model_artifacts'
   baseline_model:
+    experiment_name: 'LR_Tuning'
     cm_filename: 'lr_confusionmatrix.png'
   random_forest:
     model_parameters:
       param_grid:
-        n_estimators: [100, 200, 300, 500]
+        n_estimators: [50, 100, 200, 300]
         max_depth: [5, 7, 10]
         min_samples_split: [2, 5, 10]
       class_weight: 'balanced'
-    model_filename: 'best_rf_model.joblib'
-    params_filename: 'best_rf_params.joblib'
+    experiment_name: 'RF_Tuning'
+    model_filename: 'rf_model.joblib'
+    params_filename: 'rf_params.joblib'
     cm_filename: 'rf_confusionmatrix.png'
   gradient_boosting:
     model_parameters:
@@ -55,15 +64,13 @@ models:
         n_estimators: [50, 100, 150]
         learning_rate: [0.1, 0.01]
         max_depth: [3, 5, 7]
-    model_filename: 'best_gb_model.joblib'
-    params_filename: 'best_gb_params.joblib'
+    experiment_name: 'GB_Tuning'
+    model_filename: 'gb_model.joblib'
+    params_filename: 'gb_params.joblib'
     cm_filename: 'gb_confusionmatrix.png'
-
 mlflow:
   tracking_uri: 'sqlite:///mlflow.db'
-  experiment_name: 'ETH_USD'
+  experiment_name: 'customer_churn_prediction'
+  best_artifact_experiment_name: 'customer_churn_prediction'
 
-logging:
-  level: INFO
-  file_name: 'my_app.log'
-  format: '%(asctime)s - %(levelname)s - %(filename)s - Line %(lineno)d - %(message)s'
+

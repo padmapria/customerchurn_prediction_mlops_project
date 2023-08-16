@@ -1,18 +1,20 @@
 # data_processing/preprocess.py
-
+import os,joblib,logging
 from config.config_handler import load_config
-import os,logging
+from config.logger import LoggerSingleton
 import pandas as pd
-from sklearn.model_selection import train_test_split,ShuffleSplit
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-
+from sklearn.model_selection import ShuffleSplit
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 
 cfg = load_config()
-data_dir = cfg.data.data_dir
-MODEL_ARTIFACTS_DIR = cfg.models.model_artifact_dir
+logger = LoggerSingleton().get_logger()  # Create the logger instance
+logging.getLogger().propagate = False
 
-if not os.path.exists(MODEL_ARTIFACTS_DIR):
-    os.makedirs(MODEL_ARTIFACTS_DIR)
+data_dir = cfg.data.data_dir
+
+ENCODER_DIR = os.path.join(data_dir,cfg.data.encoder_dir)
+if not os.path.exists(ENCODER_DIR):
+    os.makedirs(ENCODER_DIR)
 
 cat_columns_to_encode = cfg.data.cat_columns_to_encode
 numerical_columns = cfg.data.numerical_columns
@@ -50,11 +52,6 @@ def shuffle_split_unbalanced_df(df, target_column, test_size=0.2, validation_siz
         y_train, y_validation = y_train_temp.iloc[train_index], y_train_temp.iloc[validation_index]
 
     return X_train, X_test, X_validation, y_train, y_test, y_validation
-    
-
-import joblib
-import pandas as pd
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 
 
 def encode_scale_data(df, onehot_columns=None,scaling_columns=None, save_encoder=True):
@@ -73,7 +70,7 @@ def encode_scale_data(df, onehot_columns=None,scaling_columns=None, save_encoder
             df_encoded.drop(column, axis=1, inplace=True)
             
             if save_encoder:
-                joblib.dump(encoder, os.path.join(MODEL_ARTIFACTS_DIR, f'{column}_encoder.joblib'))
+                joblib.dump(encoder, os.path.join(ENCODER_DIR, f'{column}_encoder.joblib'))
      
 
     # Perform Min-Max scaling on specified columns
@@ -84,7 +81,7 @@ def encode_scale_data(df, onehot_columns=None,scaling_columns=None, save_encoder
             df_encoded[column] = scaler.fit_transform(df_encoded[[column]])
 
             if save_encoder:
-                joblib.dump(scaler, os.path.join(MODEL_ARTIFACTS_DIR, f'{column}_scaler.joblib'))
+                joblib.dump(scaler, os.path.join(ENCODER_DIR, f'{column}_scaler.joblib'))
             
             scalers[column] = scaler
 
@@ -92,7 +89,7 @@ def encode_scale_data(df, onehot_columns=None,scaling_columns=None, save_encoder
     
     
 ## TO encode unseen data
-def load_encoders(encoder_folder=MODEL_ARTIFACTS_DIR):
+def load_encoders(encoder_folder=ENCODER_DIR):
     encoder_files = os.listdir(encoder_folder)
     encoder_files = [file for file in encoder_files if file.endswith('.joblib')]
     
@@ -127,17 +124,31 @@ def apply_encoding_and_scaling(df, encoders,onehot_columns=None,scaling_columns=
             df_encoded[column] = scaler.transform(df_encoded[[column]])
 
     return df_encoded
-    
-    
+
+def preprocess_unseen_data(df):
+    encoders = load_encoders()
+    if target_col in df.columns:
+        y_te = df[target_col]
+        X_te = df.drop(columns=target_col)
+        X_test = apply_encoding_and_scaling(X_te, encoders, onehot_columns=cat_columns_to_encode,
+                                            scaling_columns=numerical_columns)
+        test_data = pd.concat([X_test, y_te], axis=1)
+        return test_data
+    else:
+        X_te = df
+        X_test = apply_encoding_and_scaling(X_te, encoders, onehot_columns=cat_columns_to_encode,
+                                            scaling_columns=numerical_columns)
+        return X_test
+
+
 def preprocess_data(df):
     try:
-        logging.info("Split data to train test validation")
+        logger.info("Split data to train test validation")
         X_tr, X_te, X_val, y_train, y_test, y_validation = shuffle_split_unbalanced_df(df, target_column=target_col, 
                                                                                               test_size=0.2, validation_size=0.15, random_state=42)
-        X_train = encode_scale_data(X_tr, onehot_columns=cat_columns_to_encode,
-                                    scaling_columns=numerical_columns, save_encoder=True)
-
+        X_train = encode_scale_data(X_tr, onehot_columns=cat_columns_to_encode,scaling_columns=numerical_columns, save_encoder=True)
         encoders = load_encoders()
+
         X_validation = apply_encoding_and_scaling(X_val, encoders, onehot_columns=cat_columns_to_encode, scaling_columns=numerical_columns)
         X_test = apply_encoding_and_scaling(X_te, encoders, onehot_columns=cat_columns_to_encode, scaling_columns=numerical_columns)
 
@@ -153,7 +164,5 @@ def preprocess_data(df):
         return X_train, X_test, X_validation, y_train, y_test, y_validation
     
     except Exception as e:
-        logging.exception("An error occurred during data preprocessing: %s", str(e))
+        logger.exception("An error occurred during data preprocessing: %s", str(e))
         return None
-
-        
