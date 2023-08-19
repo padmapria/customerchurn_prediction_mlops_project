@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from model.baseline_model import calculate_scores,plot_confusion_matrix
+from mlflow.sklearn import log_model
 
 # Load the model configuration from config.config_handler
 cfg = load_config()
@@ -25,8 +26,12 @@ def perform_grid_search(classifier, param_grid, X_train, y_train, X_val, y_val,
     # Grid Search Cross Validation
     grid_search = GridSearchCV(classifier, param_grid, cv=5)
 
-    experiment_name = cfg.models.baseline_model.experiment_name
-    experiment_id = mlflow.get_experiment_by_name(experiment_name).experiment_id
+    # Get or create the experiment
+    experiment = mlflow.get_experiment_by_name(experiment_name)
+    if experiment is None:
+        experiment_id = mlflow.create_experiment(experiment_name)
+    else:
+        experiment_id = experiment.experiment_id
 
     # Start MLflow run for the entire grid search
     with mlflow.start_run(run_name=f"{classifier}_classifier",experiment_id=experiment_id) as grid_search_run:
@@ -66,16 +71,10 @@ def perform_grid_search(classifier, param_grid, X_train, y_train, X_val, y_val,
         if best_model is not None:
             model_path = os.path.join(MODEL_ARTIFACTS_DIR, model_filename)
             joblib.dump(best_model, model_path)
-            mlflow.log_artifact(model_path)
+            log_model(best_model, artifact_path=model_path,registered_model_name=model_filename)
 
             cm = plot_confusion_matrix(y_val, val_predictions, cm_filename)
             mlflow.log_artifact(cm, cm_filename)
-
-            # Register the best model under a separate experiment name
-            if(register_model):
-                mlflow.set_experiment(cfg.mlflow.best_artifact_experiment_name)
-                mlflow.register_model(model_uri=f"runs:/{grid_search_run.info.run_id}/{model_filename}",
-                                      name=model_filename)
 
         # Save the best parameters as an artifact
         if best_params is not None:

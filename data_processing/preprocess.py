@@ -20,7 +20,7 @@ cat_columns_to_encode = cfg.data.cat_columns_to_encode
 numerical_columns = cfg.data.numerical_columns
 target_col = cfg.data.target_column
 
-training_data_filename = cfg.data.validation_data_filename
+training_data_filename = cfg.data.training_data_filename
 validation_data_filename = cfg.data.validation_data_filename
 testing_data_filename = cfg.data.testing_data_filename
 
@@ -132,13 +132,12 @@ def preprocess_unseen_data(df):
         X_te = df.drop(columns=target_col)
         X_test = apply_encoding_and_scaling(X_te, encoders, onehot_columns=cat_columns_to_encode,
                                             scaling_columns=numerical_columns)
-        test_data = pd.concat([X_test, y_te], axis=1)
-        return test_data
+        return X_test,y_te
     else:
         X_te = df
         X_test = apply_encoding_and_scaling(X_te, encoders, onehot_columns=cat_columns_to_encode,
                                             scaling_columns=numerical_columns)
-        return X_test
+        return X_test,None
 
 
 def preprocess_data(df):

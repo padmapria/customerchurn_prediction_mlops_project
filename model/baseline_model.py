@@ -71,9 +71,13 @@ def train_evaluate_LR(X_train, y_train, X_val, y_val):
         # Convert y_val to 1d array using .values.ravel()
         accuracy, precision, recall, f1= calculate_scores(y_val.values.ravel(), val_predictions)
 
-        # Set the experiment by name and get the experiment ID
+        # Get or create the experiment
         experiment_name = cfg.models.baseline_model.experiment_name
-        experiment_id = mlflow.get_experiment_by_name(experiment_name).experiment_id
+        experiment = mlflow.get_experiment_by_name(experiment_name)
+        if experiment is None:
+            experiment_id = mlflow.create_experiment(experiment_name)
+        else:
+            experiment_id = experiment.experiment_id
 
         # Start an MLflow run to log the model metrics
         with mlflow.start_run(run_name="Baseline_LR_Model", experiment_id=experiment_id):

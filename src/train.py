@@ -13,7 +13,7 @@ from data_processing.eda import perform_eda
 from data_processing.preprocess import preprocess_data
 from model.baseline_model import train_evaluate_LR
 from model.hyperparameter_tuning import grid_search_RF, grid_search_GB
-from model.model_prediction import load_and_predict, evaluate_model
+from model.model_prediction import load_model_and_predict, evaluate_model
 
 logging.getLogger().propagate = False
 
@@ -64,7 +64,7 @@ def grid_search_RF_task(X_train, y_train, X_validation, y_validation):
 
 @task
 def load_and_predict_task(X_test, model_name):
-    return load_and_predict(X_test, model_name)
+    return load_model_and_predict(X_test, model_name)
 
 @task
 def evaluate_model_task(X_test, y_test, model_name):
@@ -77,12 +77,12 @@ def main_flow():
     logger.info("within floww *******")
     print("main flow called")
     df = load_data()
-    perform_eda_task(df)
+    #perform_eda_task(df)
     X_train, X_test, X_validation, y_train, y_test, y_validation = preprocess_data_task(df)
-    train_evaluate_LR_task(X_train, y_train, X_validation, y_validation)
+    #train_evaluate_LR_task(X_train, y_train, X_validation, y_validation)
 
     grid_search_RF_task(X_train, y_train, X_validation, y_validation)
-    test_predictions = load_and_predict_task(X_test, 'random_forest')
+    test_predictions = load_model_and_predict(X_test, 'random_forest')
     rf_accuracy, rf_precision, rf_recall, rf_f1 = evaluate_model_task(X_test, y_test, 'random_forest')
 
 

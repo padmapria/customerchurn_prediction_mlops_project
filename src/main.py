@@ -13,7 +13,7 @@ from data_processing.eda import perform_eda
 from data_processing.preprocess import preprocess_data,preprocess_unseen_data
 from model.baseline_model import train_evaluate_LR
 from model.hyperparameter_tuning import grid_search_RF,grid_search_GB
-from model.model_prediction import load_and_predict,evaluate_model
+from model.model_prediction import load_model_and_predict,evaluate_model
 
 logging.getLogger().propagate = False
 
@@ -40,7 +40,7 @@ def workflow_main():
     #grid_search_GB(X_train, y_train, X_validation, y_validation)
 
     # Assuming you have X_test as your test data and MODEL_ARTIFACTS_DIR as the directory where the model is stored
-    test_predictions = load_and_predict(X_test, 'random_forest')
+    test_predictions = load_model_and_predict(X_test, 'random_forest')
 
     # Call the function with your data and the desired model name (e.g., 'random_forest' or 'gradient_boosting')
     rf_accuracy, rf_precision, rf_recall, rf_f1 = evaluate_model(X_test, y_test, 'random_forest')

@@ -5,6 +5,7 @@ from config.config_handler import load_config
 from config.logger import LoggerSingleton
 import pandas as pd
 from model.baseline_model import calculate_scores
+from data_processing.preprocess import preprocess_unseen_data
 
 # Load the model configuration from config.config_handler
 cfg = load_config()
@@ -13,7 +14,28 @@ logging.getLogger().propagate = False
 
 MODEL_ARTIFACTS_DIR = cfg.models.model_artifact_dir
 
-def load_and_predict(X_test, model_name):
+# Define a prediction function
+def load_model_mlflow_and_predict(data, model_name1):
+    # Set the experiment name
+    experiment_name = cfg.mlflow.best_artifact_experiment_name
+    mlflow.set_experiment(experiment_name)
+
+    model_name = cfg.models.random_forest.model_filenam
+    client = mlflow.tracking.MlflowClient()
+
+    # Get the latest version of the registered model
+    model_instance = client.get_latest_versions(name = model_name)[0]
+    model_version  = model_instance.version
+
+    print(model_instance)
+    # Load the latest version of the registered model
+    model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version}")
+
+    # You can process input data as needed
+    predictions = model.predict(data)
+    return predictions
+
+def load_model_and_predict(X_test, model_name):
     # Load the model from the directory based on the model name
     model_filename = None
 
@@ -33,9 +55,9 @@ def load_and_predict(X_test, model_name):
 
     return predictions
 
-def evaluate_model(X_test, y_test, model_name):
-    logger.info("Evaluating model")
-    predictions = load_and_predict(X_test, model_name)
+
+def compare_prediction(X_test, y_test, model_name):
+    predictions = load_model_mlflow_and_predict(X_test, model_name)
 
     if y_test is not None:
         # Log the actual and predicted labels as an MLflow artifact
@@ -44,6 +66,17 @@ def evaluate_model(X_test, y_test, model_name):
             "Predicted": predictions
         })
 
+        return predictions,results_df
+
+    return predictions,pd.DataFrame()
+
+def evaluate_model(X_test, y_test, model_name):
+    logger.info("Evaluating model")
+
+    predictions, results_df = compare_prediction(X_test, y_test, model_name)
+
+    if y_test is not None:
+        # Log the actual and predicted labels as an MLflow artifact
         results_path = os.path.join(MODEL_ARTIFACTS_DIR, f"{model_name}_predictions.csv")
         results_df.to_csv(results_path, index=False)
 
@@ -67,3 +100,17 @@ def evaluate_model(X_test, y_test, model_name):
     else:
         return None
 
+
+def predict_for_unseen_data(fileName,processed_fileName, prediction_fileName):
+    df = pd.read_csv(os.path.join(cfg.data.data_dir,  fileName))
+    X_test, y_te = preprocess_unseen_data(df)
+
+    if y_te is not None:
+        test_data = pd.concat([X_test, y_te], axis=1)
+    else:
+        test_data= X_test
+    test_data.to_csv(os.path.join(cfg.data.data_dir,  processed_fileName))
+    predictions,results_df = compare_prediction(X_test, y_te, 'random_forest')
+
+    results_path = os.path.join(MODEL_ARTIFACTS_DIR, prediction_fileName)
+    results_df.to_csv(results_path, index=False)
