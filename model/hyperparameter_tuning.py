@@ -71,7 +71,7 @@ def perform_grid_search(classifier, param_grid, X_train, y_train, X_val, y_val,
         if best_model is not None:
             model_path = os.path.join(MODEL_ARTIFACTS_DIR, model_filename)
             joblib.dump(best_model, model_path)
-            log_model(best_model, artifact_path=model_path,registered_model_name=model_filename)
+            log_model(best_model, artifact_path="best_model",registered_model_name=model_filename)
 
             cm = plot_confusion_matrix(y_val, val_predictions, cm_filename)
             mlflow.log_artifact(cm, cm_filename)

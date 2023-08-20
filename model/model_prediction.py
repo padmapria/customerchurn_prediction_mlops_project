@@ -57,7 +57,7 @@ def load_model_and_predict(X_test, model_name):
 
 
 def compare_prediction(X_test, y_test, model_name):
-    predictions = load_model_mlflow_and_predict(X_test, model_name)
+    predictions = load_model_and_predict(X_test, model_name)
 
     if y_test is not None:
         # Log the actual and predicted labels as an MLflow artifact

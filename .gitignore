@@ -7,7 +7,6 @@
 
 *.parquet
 *.html
-*.csv
 *.log
 ~/.log/
 

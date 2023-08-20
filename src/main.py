@@ -35,7 +35,6 @@ def workflow_main():
     train_evaluate_LR(X_train, y_train, X_validation, y_validation)
 
     # Assuming you have X_val and y_val as your validation data, call the functions with your data
-    '''
     grid_search_RF(X_train, y_train, X_validation, y_validation)
     #grid_search_GB(X_train, y_train, X_validation, y_validation)
 
@@ -50,7 +49,7 @@ def workflow_main():
     print("Test data RF Precision:", rf_precision)
     print("Test data RF Recall:", rf_recall)
     print("Test data RF F1-score:", rf_f1)
-    '''
+    
 
 if __name__ == "__main__":
     # Call the load_config to get the configuration object
