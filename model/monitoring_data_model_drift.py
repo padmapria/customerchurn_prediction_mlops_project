@@ -24,10 +24,17 @@ def generate_drift_report():
     
     historical_data.drop(columns=[target_col,row_col ], inplace=True)
     new_data.drop(columns=[target_col,row_col ], inplace=True)
+    
+    # Select only the columns you want to analyze
+    columns_to_analyze = ['CreditScore','Age','Balance','EstimatedSalary','Complain']
+    
+    # List the columns you want
+    historical_subset = historical_data[columns_to_analyze]
+    new_subset = new_data[columns_to_analyze]
         
     data_drift = Report(metrics = [DataDriftPreset()])
-    data_drift.run(current_data = historical_data,
-                   reference_data = new_data)
+    data_drift.run(current_data = historical_subset,
+                   reference_data = new_subset)
 
     data_drift.show()
 

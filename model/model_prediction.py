@@ -61,11 +61,13 @@ def load_model_and_predict(X_test, model_name):
 def compare_prediction(X_test, y_test, model_name):
     predictions = load_model_mlflow_and_predict(X_test, model_name)
     
+    print(X_test.index)
     X_test.set_index(cfg.data.index_col[0], inplace=True)
+    print(X_test.index)
     if y_test is not None:
         # Log the actual and predicted labels as an MLflow artifact
         results_df = pd.DataFrame({
-            "Index": X_test.index,
+            cfg.data.index_col[0]: X_test.index,
             "Actual": y_test.values.ravel(),
             "Predicted": predictions
         })

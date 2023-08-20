@@ -13,9 +13,12 @@ from data_processing.eda import perform_eda
 from data_processing.preprocess import preprocess_data
 from model.baseline_model import train_evaluate_LR
 from model.hyperparameter_tuning import grid_search_RF, grid_search_GB
-from model.model_prediction import load_model_and_predict, evaluate_model
+from model.model_prediction import load_model_and_predict,evaluate_model,predict_for_unseen_data
+from model.monitoring_data_model_drift import generate_drift_report
 
 logging.getLogger().propagate = False
+cfg = load_config()
+data_dir = cfg.data.data_dir
 
 def log(msg):
     # Use your existing logger here
@@ -70,6 +73,19 @@ def load_and_predict_task(X_test, model_name):
 def evaluate_model_task(X_test, y_test, model_name):
     rf_accuracy, rf_precision, rf_recall, rf_f1 = evaluate_model(X_test, y_test, model_name)
     return rf_accuracy, rf_precision, rf_recall, rf_f1
+    
+@task
+def predict_for_unseen_data_task():
+    fileName = os.path.join(data_dir, cfg.data.batch_test_filename)
+    processed_fileName = cfg.data.batch_test_processed_filename
+    prediction_fileName = cfg.data.batch_test_predicted_filename
+    
+    predict_for_unseen_data(fileName,processed_fileName,prediction_fileName)
+    
+    
+@task
+def drift_report_task():
+    generate_drift_report()
 
 # Create a Prefect Flow
 @flow
@@ -84,6 +100,9 @@ def main_flow():
     grid_search_RF_task(X_train, y_train, X_validation, y_validation)
     test_predictions = load_model_and_predict(X_test, 'random_forest')
     rf_accuracy, rf_precision, rf_recall, rf_f1 = evaluate_model_task(X_test, y_test, 'random_forest')
+    
+    predict_for_unseen_data_task()
+    drift_report_task()
 
 
 def normal():
