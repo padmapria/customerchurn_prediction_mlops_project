@@ -19,6 +19,19 @@ from model.monitoring_data_model_drift import generate_drift_report
 logging.getLogger().propagate = False
 
 def workflow_main():
+    
+    # Call the load_config to get the configuration object
+    cfg = load_config()
+
+    # Set up logging using the loaded configuration
+    logger =  LoggerSingleton().get_logger()
+    logger.info('main test')
+
+    # Set MLflow tracking URI
+    mlflow.set_tracking_uri(cfg.mlflow.tracking_uri)
+
+    # Set the experiment name from the configuration file
+    mlflow.set_experiment(cfg.mlflow.experiment_name)
 
     data_dir = cfg.data.data_dir
     RAW_FILE = os.path.join(data_dir,  cfg.data.raw_filename)
@@ -59,18 +72,5 @@ def workflow_main():
     generate_drift_report()
 
 if __name__ == "__main__":
-    # Call the load_config to get the configuration object
-    cfg = load_config()
-
-    # Set up logging using the loaded configuration
-    logger =  LoggerSingleton().get_logger()
-    logger.info('main test')
-
-    # Set MLflow tracking URI
-    mlflow.set_tracking_uri(cfg.mlflow.tracking_uri)
-
-    # Set the experiment name from the configuration file
-    mlflow.set_experiment(cfg.mlflow.experiment_name)
-
     workflow_main()
 

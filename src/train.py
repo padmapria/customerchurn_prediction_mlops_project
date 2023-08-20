@@ -1,21 +1,24 @@
-# src/train.py
+import os
+import sys
+import logging
 
-import os,sys,logging
+# Import necessary modules from your project
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(project_root)
-
 from config.config_handler import load_config
 from config.logger import LoggerSingleton
-import mlflow, prefect
+import mlflow
+import prefect
 from prefect import task, flow, context, get_run_logger
-from data_processing.load_data import prepare_data_for_project,read_file
+from data_processing.load_data import prepare_data_for_project, read_file
 from data_processing.eda import perform_eda
 from data_processing.preprocess import preprocess_data
 from model.baseline_model import train_evaluate_LR
 from model.hyperparameter_tuning import grid_search_RF, grid_search_GB
-from model.model_prediction import load_model_and_predict,evaluate_model,predict_for_unseen_data
+from model.model_prediction import load_model_and_predict, evaluate_model, predict_for_unseen_data
 from model.monitoring_data_model_drift import generate_drift_report
 
+# Set up logging
 logging.getLogger().propagate = False
 cfg = load_config()
 data_dir = cfg.data.data_dir
@@ -29,7 +32,6 @@ def log(msg):
 
     # Log to existing logger
     logger.info(msg)
-
 
 # Create tasks using Prefect's @task decorator
 @task(retries=3, retry_delay_seconds=2)
@@ -45,6 +47,7 @@ def load_data():
 
 @task
 def perform_eda_task(df):
+    # EDA tasks
     cat_fileName = cfg.data.cat_eda_file
     num_fileName = cfg.data.num_eda_file
     corr_fileName = cfg.data.corr_eda_file
@@ -52,16 +55,19 @@ def perform_eda_task(df):
 
 @task
 def preprocess_data_task(df):
+    # Preprocessing task
     X_train, X_test, X_validation, y_train, y_test, y_validation = preprocess_data(df)
     return X_train, X_test, X_validation, y_train, y_test, y_validation
 
 @task
 def train_evaluate_LR_task(X_train, y_train, X_validation, y_validation):
+    # Training and evaluating a baseline LR model
     logger.info("LR baseline")
     train_evaluate_LR(X_train, y_train, X_validation, y_validation)
 
 @task(log_prints=True)
 def grid_search_RF_task(X_train, y_train, X_validation, y_validation):
+    # Hyperparameter tuning using grid search for RF model
     logger.info("grid search")
     grid_search_RF(X_train, y_train, X_validation, y_validation)
 
@@ -71,20 +77,22 @@ def load_and_predict_task(X_test, model_name):
 
 @task
 def evaluate_model_task(X_test, y_test, model_name):
+    # Evaluating the trained model
     rf_accuracy, rf_precision, rf_recall, rf_f1 = evaluate_model(X_test, y_test, model_name)
     return rf_accuracy, rf_precision, rf_recall, rf_f1
-    
+
 @task
 def predict_for_unseen_data_task():
+    # Predicting for unseen batch data
     fileName = os.path.join(data_dir, cfg.data.batch_test_filename)
     processed_fileName = cfg.data.batch_test_processed_filename
     prediction_fileName = cfg.data.batch_test_predicted_filename
-    
-    predict_for_unseen_data(fileName,processed_fileName,prediction_fileName)
-    
-    
+
+    predict_for_unseen_data(fileName, processed_fileName, prediction_fileName)
+
 @task
 def drift_report_task():
+    # Generating drift report
     generate_drift_report()
 
 # Create a Prefect Flow
@@ -100,21 +108,19 @@ def main_flow():
     grid_search_RF_task(X_train, y_train, X_validation, y_validation)
     test_predictions = load_model_and_predict(X_test, 'random_forest')
     rf_accuracy, rf_precision, rf_recall, rf_f1 = evaluate_model_task(X_test, y_test, 'random_forest')
-    
+
     predict_for_unseen_data_task()
     drift_report_task()
-
 
 def normal():
     logger.warning("info log from normal")
     logger.warning("Normal log not passed")
 
 if __name__ == "__main__":
-
     cfg = load_config()
     logger = LoggerSingleton().get_logger()  # Create the logger instance
     logger.info("Some message from train ***##")
-    normal()
+    #normal()
 
     # Set MLflow tracking URI
     mlflow.set_tracking_uri(cfg.mlflow.tracking_uri)
@@ -124,7 +130,3 @@ if __name__ == "__main__":
 
     # Run the Prefect Flow
     main_flow()
-
-
-
-
