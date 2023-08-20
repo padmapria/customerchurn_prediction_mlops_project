@@ -13,7 +13,8 @@ from data_processing.eda import perform_eda
 from data_processing.preprocess import preprocess_data,preprocess_unseen_data
 from model.baseline_model import train_evaluate_LR
 from model.hyperparameter_tuning import grid_search_RF,grid_search_GB
-from model.model_prediction import load_model_and_predict,evaluate_model
+from model.model_prediction import load_model_and_predict,evaluate_model,predict_for_unseen_data
+from model.monitoring_data_model_drift import generate_drift_report
 
 logging.getLogger().propagate = False
 
@@ -30,12 +31,12 @@ def workflow_main():
     prepare_data_for_project(RAW_FILE)
 
     df =  read_file(TRAIN_TEST_FILE)
-    perform_eda(df,cat_fileName,num_fileName,corr_fileName)
+    #perform_eda(df,cat_fileName,num_fileName,corr_fileName)
     X_train, X_test, X_validation, y_train, y_test, y_validation = preprocess_data(df)
-    train_evaluate_LR(X_train, y_train, X_validation, y_validation)
+    #train_evaluate_LR(X_train, y_train, X_validation, y_validation)
 
     # Assuming you have X_val and y_val as your validation data, call the functions with your data
-    grid_search_RF(X_train, y_train, X_validation, y_validation)
+    #grid_search_RF(X_train, y_train, X_validation, y_validation)
     #grid_search_GB(X_train, y_train, X_validation, y_validation)
 
     # Assuming you have X_test as your test data and MODEL_ARTIFACTS_DIR as the directory where the model is stored
@@ -50,6 +51,12 @@ def workflow_main():
     print("Test data RF Recall:", rf_recall)
     print("Test data RF F1-score:", rf_f1)
     
+    fileName = os.path.join(data_dir, cfg.data.batch_test_filename)
+    processed_fileName = cfg.data.batch_test_processed_filename
+    prediction_fileName = cfg.data.batch_test_predicted_filename
+    
+    predict_for_unseen_data(fileName,processed_fileName,prediction_fileName)
+    generate_drift_report()
 
 if __name__ == "__main__":
     # Call the load_config to get the configuration object

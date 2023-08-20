@@ -18,8 +18,10 @@ data:
   testing_data_filename : 'testing_data_processed.csv'
   unit_integration_processed_filename: 'unit_integration_test_data_processed.csv'
   batch_test_processed_filename: 'batch_test_data_processed.csv'
-  cols_to_drop:
+  batch_test_predicted_filename: 'batch_test_data_predicted.csv'
+  index_col:
     - 'RowNumber'
+  cols_to_drop:
     - 'CustomerId'
     - 'Surname'
   cat_columns:

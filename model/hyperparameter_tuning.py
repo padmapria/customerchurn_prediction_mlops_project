@@ -50,7 +50,8 @@ def perform_grid_search(classifier, param_grid, X_train, y_train, X_val, y_val,
             model = classifier.set_params(**params)
             model.fit(X_train, y_train)
             val_predictions = model.predict(X_val)
-
+            
+            logger.info("Results for Run Id:: %s",grid_search_run.info.run_id)
             gs_accuracy, gs_precision, gs_recall, gs_f1 = calculate_scores(y_val, val_predictions)
 
             mlflow.log_metrics({
@@ -67,21 +68,25 @@ def perform_grid_search(classifier, param_grid, X_train, y_train, X_val, y_val,
                 best_params = params
                 predictions = val_predictions
 
-        # Save the best model for the entire grid search as an artifact
-        if best_model is not None:
-            model_path = os.path.join(MODEL_ARTIFACTS_DIR, model_filename)
-            joblib.dump(best_model, model_path)
-            log_model(best_model, artifact_path="best_model",registered_model_name=model_filename)
-
-            cm = plot_confusion_matrix(y_val, val_predictions, cm_filename)
-            mlflow.log_artifact(cm, cm_filename)
-
         # Save the best parameters as an artifact
         if best_params is not None:
             params_path = os.path.join(MODEL_ARTIFACTS_DIR, params_filename)
             with open(params_path, "w") as f:
                 json.dump(best_params, f)
             mlflow.log_artifact(params_path)
+            
+        # Save the best model for the entire grid search as an artifact
+        if best_model is not None:
+            model_path = os.path.join(MODEL_ARTIFACTS_DIR, model_filename)
+            joblib.dump(best_model, model_path)
+            
+            cm = plot_confusion_matrix(y_val, val_predictions, cm_filename)
+            mlflow.log_artifact(cm, cm_filename)
+            
+            if(register_model==True):
+                experiment_name = cfg.mlflow.best_artifact_experiment_name
+                mlflow.set_experiment(experiment_name)
+                log_model(best_model, artifact_path="best_model",registered_model_name=model_filename)
 
 
 def grid_search_RF(X_train, y_train, X_val, y_val):

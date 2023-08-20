@@ -17,7 +17,9 @@ def save_dataframe_subset(df, start_index, end_index, filename):
 
 def prepare_data_for_project(input_file, reset_index=True):
     # Read the DataFrame
-    df = pd.read_csv(input_file)
+    df = pd.read_csv(input_file) 
+    
+    print(df.columns)
     
     # Check for duplicate rows
     duplicates = df.duplicated()
@@ -30,10 +32,6 @@ def prepare_data_for_project(input_file, reset_index=True):
 
     # Drop duplicate rows and keep the first occurrence
     df.drop_duplicates(keep='first', inplace=True)
-
-    # Optionally, reset the index if needed
-    if reset_index:
-        df.reset_index(drop=True, inplace=True)
 
     _drop_unwanted_cols(df)
 

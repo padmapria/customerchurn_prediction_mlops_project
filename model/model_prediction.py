@@ -20,16 +20,18 @@ def load_model_mlflow_and_predict(data, model_name1):
     experiment_name = cfg.mlflow.best_artifact_experiment_name
     mlflow.set_experiment(experiment_name)
 
-    model_name = cfg.models.random_forest.model_filenam
+    model_filename = cfg.models.random_forest.model_filename
+    
     client = mlflow.tracking.MlflowClient()
 
     # Get the latest version of the registered model
-    model_instance = client.get_latest_versions(name = model_name)[0]
-    model_version  = model_instance.version
+    model_instance = client.get_latest_versions(name = model_filename)[0]
+    model_version  = model_instance.version 
 
-    print(model_instance)
     # Load the latest version of the registered model
-    model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version}")
+    model_uri = f"models:/{model_filename}/{model_version}"
+    model = mlflow.sklearn.load_model(model_uri)
+    logger.info("Loaded model from MLFlow for prediction")
 
     # You can process input data as needed
     predictions = model.predict(data)
@@ -57,11 +59,13 @@ def load_model_and_predict(X_test, model_name):
 
 
 def compare_prediction(X_test, y_test, model_name):
-    predictions = load_model_and_predict(X_test, model_name)
-
+    predictions = load_model_mlflow_and_predict(X_test, model_name)
+    
+    X_test.set_index(cfg.data.index_col[0], inplace=True)
     if y_test is not None:
         # Log the actual and predicted labels as an MLflow artifact
         results_df = pd.DataFrame({
+            "Index": X_test.index,
             "Actual": y_test.values.ravel(),
             "Predicted": predictions
         })
@@ -102,15 +106,21 @@ def evaluate_model(X_test, y_test, model_name):
 
 
 def predict_for_unseen_data(fileName,processed_fileName, prediction_fileName):
-    df = pd.read_csv(os.path.join(cfg.data.data_dir,  fileName))
-    X_test, y_te = preprocess_unseen_data(df)
-
-    if y_te is not None:
-        test_data = pd.concat([X_test, y_te], axis=1)
+    df = pd.read_csv(fileName)
+    test_data = preprocess_unseen_data(df)
+    
+    target_col = cfg.data.target_column[0]
+    
+    if target_col in test_data.columns:
+        print("Target column is present")
+        X_test = test_data.drop(columns=[target_col])
+        y_te = test_data[target_col]
     else:
-        test_data= X_test
-    test_data.to_csv(os.path.join(cfg.data.data_dir,  processed_fileName))
+        print("Target column is not present")
+        print("Columns in test_data:", test_data.columns)
+    
+    test_data.to_csv(os.path.join(cfg.data.data_dir,  processed_fileName), index=False)
     predictions,results_df = compare_prediction(X_test, y_te, 'random_forest')
 
-    results_path = os.path.join(MODEL_ARTIFACTS_DIR, prediction_fileName)
+    results_path = os.path.join(cfg.data.data_dir, prediction_fileName)
     results_df.to_csv(results_path, index=False)

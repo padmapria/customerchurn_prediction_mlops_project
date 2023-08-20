@@ -3,7 +3,7 @@ import os,joblib,logging
 from config.config_handler import load_config
 from config.logger import LoggerSingleton
 import pandas as pd
-from sklearn.model_selection import ShuffleSplit
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 
 cfg = load_config()
@@ -29,27 +29,14 @@ def shuffle_split_unbalanced_df(df, target_column, test_size=0.2, validation_siz
     
     X = df.drop(columns=target_column)
     y = df[target_column]
+    
+    # Shuffle the data
+    X_shuffled, y_shuffled = X.sample(frac=1, random_state=42), y.sample(frac=1, random_state=42)
 
-    # Create a ShuffleSplit cross-validator
-    shuffle_split = ShuffleSplit(n_splits=1, test_size=test_size + validation_size, random_state=random_state)
-
-    # Generate the shuffling splits
-    for train_temp_index, test_index in shuffle_split.split(X):
-        # Split data into training and temporary set (remaining data)
-        X_train_temp, X_test = X.iloc[train_temp_index], X.iloc[test_index]
-        y_train_temp, y_test = y.iloc[train_temp_index], y.iloc[test_index]
-
-    # Calculate the percentage of validation set out of the temporary set
-    validation_ratio = validation_size / (1 - test_size)
-
-    # Create another ShuffleSplit cross-validator for the temporary set
-    shuffle_split_temp = ShuffleSplit(n_splits=1, test_size=validation_ratio, random_state=random_state)
-
-    # Generate the shuffling splits for the temporary set
-    for train_index, validation_index in shuffle_split_temp.split(X_train_temp):
-        # Split temporary set into training and validation sets
-        X_train, X_validation = X_train_temp.iloc[train_index], X_train_temp.iloc[validation_index]
-        y_train, y_validation = y_train_temp.iloc[train_index], y_train_temp.iloc[validation_index]
+    # Split the shuffled data into train, validation, and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X_shuffled, y_shuffled, test_size=0.2, random_state=42)
+    
+    X_train, X_validation, y_train, y_validation = train_test_split(X_train, y_train, test_size=0.15, random_state=42)
 
     return X_train, X_test, X_validation, y_train, y_test, y_validation
 
@@ -127,39 +114,39 @@ def apply_encoding_and_scaling(df, encoders,onehot_columns=None,scaling_columns=
 
 def preprocess_unseen_data(df):
     encoders = load_encoders()
-    if target_col in df.columns:
-        y_te = df[target_col]
-        X_te = df.drop(columns=target_col)
-        X_test = apply_encoding_and_scaling(X_te, encoders, onehot_columns=cat_columns_to_encode,
+    X_test = apply_encoding_and_scaling(df, encoders, onehot_columns=cat_columns_to_encode,
                                             scaling_columns=numerical_columns)
-        return X_test,y_te
-    else:
-        X_te = df
-        X_test = apply_encoding_and_scaling(X_te, encoders, onehot_columns=cat_columns_to_encode,
-                                            scaling_columns=numerical_columns)
-        return X_test,None
-
-
+    return X_test
+                                            
 def preprocess_data(df):
     try:
         logger.info("Split data to train test validation")
         X_tr, X_te, X_val, y_train, y_test, y_validation = shuffle_split_unbalanced_df(df, target_column=target_col, 
                                                                                               test_size=0.2, validation_size=0.15, random_state=42)
-        X_train = encode_scale_data(X_tr, onehot_columns=cat_columns_to_encode,scaling_columns=numerical_columns, save_encoder=True)
+        
+        # Save the data to files
+        train_data1 =  X_tr.join(y_train)
+        validation_data1 = X_val.join(y_validation)
+        test_data1 = X_te.join(y_test)   
+        
+        train_data = encode_scale_data(train_data1, onehot_columns=cat_columns_to_encode,scaling_columns=numerical_columns, save_encoder=True)
+       
         encoders = load_encoders()
 
-        X_validation = apply_encoding_and_scaling(X_val, encoders, onehot_columns=cat_columns_to_encode, scaling_columns=numerical_columns)
-        X_test = apply_encoding_and_scaling(X_te, encoders, onehot_columns=cat_columns_to_encode, scaling_columns=numerical_columns)
+        validation_data = apply_encoding_and_scaling(validation_data1, encoders, onehot_columns=cat_columns_to_encode, scaling_columns=numerical_columns)
+        test_data = apply_encoding_and_scaling(test_data1, encoders, onehot_columns=cat_columns_to_encode, scaling_columns=numerical_columns)
 
-        # Save the data to files
-        train_data = pd.concat([X_train, y_train], axis=1)
-        validation_data = pd.concat([X_validation, y_validation], axis=1)
-        test_data = pd.concat([X_test, y_test], axis=1)
-
-        train_data.to_csv(os.path.join(data_dir, training_data_filename), index=False)
-        validation_data.to_csv(os.path.join(data_dir, validation_data_filename), index=False)
-        test_data.to_csv(os.path.join(data_dir, testing_data_filename), index=False)
-
+        train_data.to_csv(os.path.join(data_dir, training_data_filename),index=False)
+        validation_data.to_csv(os.path.join(data_dir, validation_data_filename),index=False)
+        test_data.to_csv(os.path.join(data_dir, testing_data_filename),index=False)
+        
+        X_train = train_data.drop(columns=target_col)
+        y_train = train_data[target_col]
+        X_validation = validation_data.drop(columns=target_col)
+        y_validation = validation_data[target_col]
+        X_test = test_data.drop(columns=target_col)
+        y_test = test_data[target_col]
+        
         return X_train, X_test, X_validation, y_train, y_test, y_validation
     
     except Exception as e:
