@@ -16,6 +16,7 @@ Unit/Integration Testing - pytest
 Deployment - Docker    
 CI/CD: Github actions   
 Cloud - AWS    
+pre-commit
 
 
 ### DataSet Used 
