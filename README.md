@@ -16,7 +16,7 @@ Unit/Integration Testing - pytest
 Deployment - Docker    
 CI/CD: Github actions   
 Cloud - AWS    
-pre-commit
+pre-commit - mypy
 
 
 ### DataSet Used 
@@ -116,8 +116,9 @@ docker ps
 
 Access Container Logs:    
 Once you have the container ID or name, you can use the docker logs command to access the logs. For ex:    
-docker logs <container_id_or_name>   
-
+docker logs <container_id_or_name>     
+ 
+<b> Alternatively , Included how to run in Makefile for Linux/Ubuntu </b>     
 
 ### Deployment with github actions CI/CD
 -----------------------------------------
