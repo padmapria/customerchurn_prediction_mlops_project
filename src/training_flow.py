@@ -54,11 +54,18 @@ def load_data():
 @task
 def perform_eda_task(df):
     # EDA tasks
-    cfg, logger = get_config()
-    cat_fileName = cfg.data.cat_eda_file
-    num_fileName = cfg.data.num_eda_file
-    corr_fileName = cfg.data.corr_eda_file
-    perform_eda(df, cat_fileName, num_fileName, corr_fileName)
+    try:
+        cfg, logger = get_config()
+        logger.info("Performing Exploratory Data Analysis")
+        cat_fileName = cfg.data.cat_eda_file
+        num_fileName = cfg.data.num_eda_file
+        corr_fileName = cfg.data.corr_eda_file
+        perform_eda(df, cat_fileName, num_fileName, corr_fileName)
+        
+    except Exception as e:
+        # Handle the exception, log an error, and potentially raise it again
+        logger.error("Error at EDA: %s", str(e))
+        raise
 
 @task
 def preprocess_data_task(df):
@@ -142,8 +149,8 @@ def main_flow(fileName, processed_fileName, prediction_fileName):
     try:
         cfg, logger = get_config()
 
-        logger.info("within flow *******")
-        print("main flow called")
+        logger.info("within main flow *******")
+
         df = load_data()
 
         # Set MLflow tracking URI
@@ -152,11 +159,12 @@ def main_flow(fileName, processed_fileName, prediction_fileName):
         # Set the experiment name from the configuration file
         mlflow.set_experiment(cfg.mlflow.experiment_name)
 
-        #perform_eda_task(df)
+        perform_eda_task(df)
         X_train, X_test, X_validation, y_train, y_test, y_validation = preprocess_data_task(df)
-        #train_evaluate_LR_task(X_train, y_train, X_validation, y_validation)
+        train_evaluate_LR_task(X_train, y_train, X_validation, y_validation)
 
         grid_search_RF_task(X_train, y_train, X_validation, y_validation)
+        
         test_predictions = load_model_and_predict(X_test, 'random_forest')
         rf_accuracy, rf_precision, rf_recall, rf_f1 = evaluate_model_task(X_test, y_test, 'random_forest')
 
