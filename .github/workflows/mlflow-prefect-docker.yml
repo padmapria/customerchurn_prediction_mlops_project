@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.11
 
       - name: Install dependencies
         run: |
@@ -47,7 +47,15 @@ jobs:
           PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
 
       - name: Run model training
-        run: python training_flow.py  # Modify this based on your project structure
+        run: python training_flow.py  # contain,data preprocessing,hyperparamtuning and model registry to mlflow
+        
+      - name: Start Docker
+        run: |
+          sudo service docker start
         
       - name: Test model and deploy in docker
-        run: python src/runtest_deploy.py  # Modify this based on your project structure
+        run: python src/runtest_deploy.py  # Run the unit and integration test, if success then deploy to docker
+        
+      - name: Run Docker container
+        run: |
+          docker run -d myproject-image
