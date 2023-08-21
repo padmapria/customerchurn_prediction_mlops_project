@@ -73,7 +73,7 @@ The entire pipeline can be executed by installing the dependencies from requirem
 4) Checking Test Results: Collects results from both test types and determines the overall success of the tests.
 5) Conditional Deployment: Proceeds to build and deploy a Docker image if both test types pass.Stops deployment if any of the tests fail, ensuring potential issues are avoided.
 6) Docker Image Creation: Constructs a Docker image with the name "myproject-image". The image encapsulates the project's environment, relavent configuration and datas.
-7) Final Outcome: Deploys the project if tests and image creation were successful. Safeguards project integrity by preventing deployment in case of test failures.
+7) Final Outcome: Deploys the project in batch if tests and image creation were successful. Safeguards project integrity by preventing deployment in case of test failures.
 8) The deployed project, runs end to end prediction over the raw data located at the data folder 'batch_test_data_raw.csv' 
 9) By encapsulating these steps, the runtest_deploy.py script assures thorough testing and secure deployment, contributing to the project's reliability and stability.
 
