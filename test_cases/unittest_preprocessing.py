@@ -4,7 +4,7 @@ from config.logger import LoggerSingleton
 import unittest,logging,os
 import numpy as np
 import pandas as pd
-from data_processing.training_data_preprocess import preprocess_unseen_data
+from data_processing.unseen_data_preprocess import preprocess_unseen_data
 
 class TestPreprocessing(unittest.TestCase):
 

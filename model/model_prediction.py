@@ -59,7 +59,7 @@ def load_model_and_predict(X_test, model_name):
 
 
 def compare_prediction(X_test, y_test, model_name):
-    predictions = load_model_mlflow_and_predict(X_test, model_name)
+    predictions = load_model_and_predict(X_test, model_name)
     
     print(X_test.index)
     X_test.set_index(cfg.data.index_col[0], inplace=True)
@@ -114,7 +114,6 @@ def predict_for_unseen_data(fileName,processed_fileName, prediction_fileName):
     target_col = cfg.data.target_column[0]
     
     if target_col in test_data.columns:
-        print("Target column is present")
         X_test = test_data.drop(columns=[target_col])
         y_te = test_data[target_col]
     else:

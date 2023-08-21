@@ -3,7 +3,7 @@ logging:
   file_name: 'app.log'
   format: '%(asctime)s - %(levelname)s - %(filename)s - Line %(lineno)d - %(message)s'
 data:
-  data_dir: '../customerchurn_prediction_mlops_project/data'
+  data_dir: './data'
   raw_filename : 'Customer-Churn-Records.csv'
   train_test_filename: 'train_cv_test_data_raw.csv'
   unit_integration_filename : 'unit_integration_test_data_raw.csv'
@@ -48,7 +48,7 @@ data:
   target_column:
     - 'Exited'
 models:
-  model_artifact_dir: '../customerchurn_prediction_mlops_project/model_artifacts'
+  model_artifact_dir: './model_artifacts'
   baseline_model:
     experiment_name: 'LR_Tuning'
     cm_filename: 'lr_confusionmatrix.png'
