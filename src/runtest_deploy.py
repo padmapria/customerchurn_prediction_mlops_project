@@ -10,16 +10,22 @@ from config.logger import LoggerSingleton
 import subprocess,unittest
 #from test_cases import unittest_preprocessing
 from test_cases.unittest_preprocessing import TestPreprocessing
+from test_cases.integration_test_workflow import TestMainFlow
+
 
 def run_tests():
-    logger.info("Starting test")
-    # Create a test suite and add your test case to it
-    test_suite =  unittest.TestLoader().loadTestsFromTestCase(TestPreprocessing)
-    
+    logger.info("Starting tests")
+
+    # Create test suites for unit and integration tests
+    unit_test_suite = unittest.TestLoader().loadTestsFromTestCase(TestPreprocessing)
+    integration_test_suite = unittest.TestLoader().loadTestsFromTestCase(TestMainFlow)
+
     # Run the tests
-    test_result = unittest.TextTestRunner().run(test_suite)
-    
-    if test_result.wasSuccessful():
+    unit_test_result = unittest.TextTestRunner().run(unit_test_suite)
+    integration_test_result = unittest.TextTestRunner().run(integration_test_suite)
+
+    # Check the test results
+    if unit_test_result.wasSuccessful() and integration_test_result.wasSuccessful():
         print("All tests passed. Building Docker image and deploying...")
         build_and_deploy_docker_image()
     else:

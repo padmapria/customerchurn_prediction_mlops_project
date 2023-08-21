@@ -1,6 +1,8 @@
 # test_cases/integration_test_workflow.py
 
-import unittest,logging,os,sys
+import unittest
+import os
+import sys,prefect
 
 # Add the project root directory to the Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -8,39 +10,31 @@ sys.path.append(project_root)
 
 from config.config_handler import load_config
 from config.logger import LoggerSingleton
+from prefect.testing.utilities import prefect_test_harness
 
-import sys
-import os
-import unittest
-from io import StringIO
-from contextlib import redirect_stdout
-from src.main import workflow_main
 
-class IntegrationTestWorkflow(unittest.TestCase):
+from src.training_flow import main_flow  # Import your actual main_flow function
 
-    cfg = load_config()
-    data_dir = cfg.data.data_dir
-    logger = LoggerSingleton().get_logger()  # Create the logger instance
-    logging.getLogger().propagate = False
+class TestMainFlow(unittest.TestCase):
 
-    logger.info("unit Testing started **")
+    def test_integration(self):
+        # Set up any necessary configuration or data for your test
+        cfg, logger = self.setup()
 
-    def setUp(self):
-        self.captured_output = StringIO()  # To capture print statements
-        sys.stdout = self.captured_output  # Redirect stdout to capture print
+        logger.info("Prefect flow Integration Testing started **")
 
-    def tearDown(self):
-        sys.stdout = sys.__stdout__  # Reset stdout
+        fileName = os.path.join(cfg.data.data_dir, cfg.data.unit_integration_filename)
+        processed_fileName = cfg.data.unit_integration_processed_filename
+        prediction_fileName = cfg.data.unit_integration_predicted_filename
 
-    def test_workflow(self):
-        # Call the workflow_main function
-        workflow_main()
+        with prefect_test_harness():
+            # run the flow against a temporary testing database
+            assert main_flow(fileName, processed_fileName, prediction_fileName) == 'success'
 
-        # Get the captured output and assert on expected results
-        captured_output = self.captured_output.getvalue().strip().split('\n')
-        
-        # Example assertion on captured output
-        self.assertIn("Test data RF Accuracy:", captured_output)
+    def setup(self):
+        cfg = load_config()
+        logger = LoggerSingleton().get_logger()  # Create the logger instance
+        return cfg, logger
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

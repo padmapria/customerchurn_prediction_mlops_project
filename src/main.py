@@ -16,24 +16,20 @@ from model.hyperparameter_tuning import grid_search_RF,grid_search_GB
 from model.model_prediction import load_model_and_predict,evaluate_model,predict_for_unseen_data
 from model.monitoring_data_model_drift import generate_drift_report
 
-logging.getLogger().propagate = False
-
-def workflow_main():
-    
-    # Call the load_config to get the configuration object
+def get_config():
     cfg = load_config()
 
     # Set up logging using the loaded configuration
-    logger =  LoggerSingleton().get_logger()
-    logger.info('main test')
+    logging.getLogger().propagate = False
+    logger = LoggerSingleton().get_logger()  # Create the logger instance
+    logger.info("Some message from train ***##")
 
-    # Set MLflow tracking URI
-    mlflow.set_tracking_uri(cfg.mlflow.tracking_uri)
+    return cfg,logger
 
-    # Set the experiment name from the configuration file
-    mlflow.set_experiment(cfg.mlflow.experiment_name)
-
+def workflow_main(newdata_fileName,newdata_processed_fileName,newdata_prediction_fileName):
+    cfg, logger  = get_config()
     data_dir = cfg.data.data_dir
+
     RAW_FILE = os.path.join(data_dir,  cfg.data.raw_filename)
     TRAIN_TEST_FILE = os.path.join(data_dir, cfg.data.train_test_filename)
 
@@ -43,10 +39,17 @@ def workflow_main():
 
     prepare_data_for_project(RAW_FILE)
 
-    df =  read_file(TRAIN_TEST_FILE)
-    #perform_eda(df,cat_fileName,num_fileName,corr_fileName)
+    df = read_file(TRAIN_TEST_FILE)
+
+    # Set MLflow tracking URI
+    mlflow.set_tracking_uri(cfg.mlflow.tracking_uri)
+
+    # Set the experiment name from the configuration file
+    mlflow.set_experiment(cfg.mlflow.experiment_name)
+
+    perform_eda(df,cat_fileName,num_fileName,corr_fileName)
     X_train, X_test, X_validation, y_train, y_test, y_validation = preprocess_data(df)
-    #train_evaluate_LR(X_train, y_train, X_validation, y_validation)
+    train_evaluate_LR(X_train, y_train, X_validation, y_validation)
 
     # Assuming you have X_val and y_val as your validation data, call the functions with your data
     #grid_search_RF(X_train, y_train, X_validation, y_validation)
@@ -59,18 +62,20 @@ def workflow_main():
     rf_accuracy, rf_precision, rf_recall, rf_f1 = evaluate_model(X_test, y_test, 'random_forest')
 
     # Print the results
-    print("Test data RF Accuracy:", rf_accuracy)
-    print("Test data RF Precision:", rf_precision)
-    print("Test data RF Recall:", rf_recall)
-    print("Test data RF F1-score:", rf_f1)
-    
-    fileName = os.path.join(data_dir, cfg.data.batch_test_filename)
-    processed_fileName = cfg.data.batch_test_processed_filename
-    prediction_fileName = cfg.data.batch_test_predicted_filename
-    
-    predict_for_unseen_data(fileName,processed_fileName,prediction_fileName)
+    logger.info("Test data RF Accuracy: %s", rf_accuracy)
+    logger.info("Test data RF Precision: %s", rf_precision)
+    logger.info("Test data RF Recall: %s", rf_recall)
+    logger.info("Test data RF F1-score: %s", rf_f1)
+
+    predict_for_unseen_data(newdata_fileName,newdata_processed_fileName,newdata_prediction_fileName)
     generate_drift_report()
 
 if __name__ == "__main__":
-    workflow_main()
+    cfg = load_config()
+    data_dir = cfg.data.data_dir
+    newdata_fileName = os.path.join(data_dir, cfg.data.batch_test_filename)
+    newdata_processed_fileName = cfg.data.batch_test_processed_filename
+    newdata_prediction_fileName = cfg.data.batch_test_predicted_filename
+
+    workflow_main(newdata_fileName,newdata_processed_fileName,newdata_prediction_fileName)
 
