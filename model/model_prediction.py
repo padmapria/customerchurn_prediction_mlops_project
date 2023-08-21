@@ -5,7 +5,7 @@ from config.config_handler import load_config
 from config.logger import LoggerSingleton
 import pandas as pd
 from model.baseline_model import calculate_scores
-from data_processing.preprocess import preprocess_unseen_data
+from data_processing.unseen_data_preprocess import preprocess_unseen_data
 
 # Load the model configuration from config.config_handler
 cfg = load_config()

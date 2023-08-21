@@ -11,7 +11,7 @@ import mlflow,prefect
 from prefect import task, flow, context, get_run_logger
 from data_processing.load_data import prepare_data_for_project, read_file
 from data_processing.eda import perform_eda
-from data_processing.preprocess import preprocess_data
+from data_processing.training_data_preprocess import preprocess_data
 from model.baseline_model import train_evaluate_LR
 from model.hyperparameter_tuning import grid_search_RF, grid_search_GB
 from model.model_prediction import load_model_and_predict, evaluate_model, predict_for_unseen_data

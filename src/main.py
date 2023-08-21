@@ -10,7 +10,7 @@ from config.logger import LoggerSingleton
 
 from data_processing.load_data import read_file,prepare_data_for_project
 from data_processing.eda import perform_eda
-from data_processing.preprocess import preprocess_data,preprocess_unseen_data
+from data_processing.training_data_preprocess import preprocess_data
 from model.baseline_model import train_evaluate_LR
 from model.hyperparameter_tuning import grid_search_RF,grid_search_GB
 from model.model_prediction import load_model_and_predict,evaluate_model,predict_for_unseen_data
@@ -49,7 +49,7 @@ def workflow_main(newdata_fileName,newdata_processed_fileName,newdata_prediction
 
     perform_eda(df,cat_fileName,num_fileName,corr_fileName)
     X_train, X_test, X_validation, y_train, y_test, y_validation = preprocess_data(df)
-    train_evaluate_LR(X_train, y_train, X_validation, y_validation)
+    #train_evaluate_LR(X_train, y_train, X_validation, y_validation)
 
     # Assuming you have X_val and y_val as your validation data, call the functions with your data
     #grid_search_RF(X_train, y_train, X_validation, y_validation)

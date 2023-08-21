@@ -2,7 +2,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from data_processing.load_data import load_data
-from data_processing.preprocess import preprocess_data
+from data_processing.training_data_preprocess import preprocess_data
 from model.baseline_model import train_baseline_model
 from model.hyperparameter_tuning import optimize_hyperparameters
 from config.main_config import get_config
